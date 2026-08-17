@@ -1,4 +1,4 @@
-package net.meowsers.Peach.Utils;
+package net.meowsers.Peach.Utils.Enums;
 
 public enum ConsoleColor {
     BLACK("\u001B[30m"),

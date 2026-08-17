@@ -1,11 +1,17 @@
 package net.meowsers.Peach;
 
+import net.meowsers.Peach.Graphics.Draw;
 import net.meowsers.Peach.Graphics.Renderer;
 import net.meowsers.Peach.Utils.Time;
 
+import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
+import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
+
 public abstract class Application {
 
-    Peach peach = new Peach();
+    Peach peach;
+    Window window;
+    Renderer renderer;
 
     private float deltaTime;
 
@@ -14,11 +20,14 @@ public abstract class Application {
     public abstract void shutdown();
 
     public void run(String title, int width, int height) {
+        peach = new Peach();
         Time.start();
         peach.start(title, width, height);
 
-        Window window = peach.getWindow();
-        Renderer renderer = peach.getRenderer();
+        window = peach.getWindow();
+        renderer = peach.getRenderer();
+
+        new Draw(renderer);
 
         start();
 
@@ -30,11 +39,18 @@ public abstract class Application {
 
             update(deltaTime);
 
+            renderer.render(width, height);
+
+            glfwSwapBuffers(window.getHandle());
         }
         shutdown();
         peach.shutdown();
 
 
+    }
+
+    public Window getWindow() {
+        return window;
     }
 
 }

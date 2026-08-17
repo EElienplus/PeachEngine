@@ -58,3 +58,12 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+task runPeach(type: JavaExec) {
+    group = "application"
+    description = "Runs the engine"
+
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'net.meowsers.Main'
+    jvmArgs '-XstartOnFirstThread'
+}

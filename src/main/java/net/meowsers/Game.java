@@ -1,9 +1,9 @@
 package net.meowsers;
 
 import net.meowsers.Peach.Application;
+import net.meowsers.Peach.Utils.Enums.Colors;
 
 public class Game extends Application {
-
 
     @Override
     public void start() {
@@ -12,6 +12,7 @@ public class Game extends Application {
 
     @Override
     public void update(float deltaTime) {
+        getWindow().clearBackground(Colors.DarkGreen);
 
     }
 
