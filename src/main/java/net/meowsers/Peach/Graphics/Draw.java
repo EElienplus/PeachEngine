@@ -1,12 +1,15 @@
 package net.meowsers.Peach.Graphics;
 
 import net.meowsers.Peach.Shapes.Circle;
+import net.meowsers.Peach.Shapes.Curve;
 import net.meowsers.Peach.Shapes.Line;
 import net.meowsers.Peach.Shapes.Rectangle;
 import net.meowsers.Peach.Shapes.Triangle;
 import net.meowsers.Peach.Utils.Color;
 import net.meowsers.Peach.Utils.Enums.Colors;
 import org.joml.Vector2f;
+
+import java.util.List;
 
 public class Draw {
     private static Renderer renderer;
@@ -22,6 +25,18 @@ public class Draw {
     private static final float[] CIRCLE_SIN = new float[CIRCLE_SEGMENTS];
     private static final int[] CIRCLE_INDICES = new int[CIRCLE_SEGMENTS * 3];
     private static final float[] CIRCLE_VERTS = new float[(CIRCLE_SEGMENTS + 1) * RenderBatch.INPUT_VERTEX_SIZE];
+
+    private static float[] DYNAMIC_VERTS = new float[2048];
+    private static int[] DYNAMIC_INDICES = new int[3072];
+
+    private static void ensureDynamicCapacity(int requiredVerts, int requiredIndices) {
+        if (DYNAMIC_VERTS.length < requiredVerts) {
+            DYNAMIC_VERTS = new float[requiredVerts * 2];
+        }
+        if (DYNAMIC_INDICES.length < requiredIndices) {
+            DYNAMIC_INDICES = new int[requiredIndices * 2];
+        }
+    }
 
     static {
         // pre calculate unit circle when the engine starts
@@ -114,6 +129,128 @@ public class Draw {
         renderer.submit(QUAD_VERTS, QUAD_INDICES, 0, 0);
     }
 
+    public static void curve(Curve curve, Colors color) {
+        curve(curve, 1, color.getColor());
+    }
+    public static void curve(Curve curve, Color color) {
+        curve(curve, 1, color);
+    }
+    public static void curve(Curve curve, int thickness, Colors color) {
+        curve(curve, thickness, color.getColor());
+    }
+
+    public static void curve(Curve curve, int thickness, Color color) {
+        List<Vector2f> points = curve.getPoints();
+        int numPoints = points.size();
+
+        if (numPoints < 2) return;
+
+        int vertCount = numPoints * 2;
+        int requiredVertsLength = vertCount * RenderBatch.INPUT_VERTEX_SIZE;
+        int requiredIndicesLength = (numPoints - 1) * 6;
+
+        ensureDynamicCapacity(requiredVertsLength, requiredIndicesLength);
+
+        float halfThick = thickness / 2.0f;
+        float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
+
+        // Generate Vertices
+        for (int i = 0; i < numPoints; i++) {
+            Vector2f current = points.get(i);
+            float nx, ny;
+
+            if (i == 0) {
+                // First point normal
+                Vector2f next = points.get(i + 1);
+                float dx = next.x - current.x;
+                float dy = next.y - current.y;
+                float len = (float) Math.sqrt(dx * dx + dy * dy);
+                nx = -dy / len;
+                ny = dx / len;
+            } else if (i == numPoints - 1) {
+                // Last point normal
+                Vector2f prev = points.get(i - 1);
+                float dx = current.x - prev.x;
+                float dy = current.y - prev.y;
+                float len = (float) Math.sqrt(dx * dx + dy * dy);
+                nx = -dy / len;
+                ny = dx / len;
+            } else {
+                // Middle points: Calculate miter joint (average of the two segment normals)
+                Vector2f prev = points.get(i - 1);
+                Vector2f next = points.get(i + 1);
+
+                float dir1X = current.x - prev.x;
+                float dir1Y = current.y - prev.y;
+                float len1 = (float) Math.sqrt(dir1X * dir1X + dir1Y * dir1Y);
+                dir1X /= len1; dir1Y /= len1;
+
+                float dir2X = next.x - current.x;
+                float dir2Y = next.y - current.y;
+                float len2 = (float) Math.sqrt(dir2X * dir2X + dir2Y * dir2Y);
+                dir2X /= len2; dir2Y /= len2;
+
+                // Tangent is the normalized sum of the two directions
+                float tangentX = dir1X + dir2X;
+                float tangentY = dir1Y + dir2Y;
+                float tangentLen = (float) Math.sqrt(tangentX * tangentX + tangentY * tangentY);
+
+                if (tangentLen == 0) {
+                    // Edge case: curve doubles back on itself perfectly
+                    nx = -dir1Y;
+                    ny = dir1X;
+                } else {
+                    tangentX /= tangentLen;
+                    tangentY /= tangentLen;
+                    // Normal is perpendicular to the tangent
+                    nx = -tangentY;
+                    ny = tangentX;
+
+                    // Miter thickness correction (prevents corners from looking "pinched")
+                    float dot = nx * (-dir1Y) + ny * dir1X;
+                    // Clamp dot product to prevent extreme spikes on very sharp turns
+                    dot = Math.max(0.1f, Math.min(dot, 1.0f));
+                    nx /= dot;
+                    ny /= dot;
+                }
+            }
+
+            // Add top and bottom vertices for this point
+            int offset = i * 2 * RenderBatch.INPUT_VERTEX_SIZE;
+
+            // Vertex 1 (Top edge)
+            DYNAMIC_VERTS[offset] = current.x + nx * halfThick;
+            DYNAMIC_VERTS[offset + 1] = current.y + ny * halfThick;
+            DYNAMIC_VERTS[offset + 2] = r; DYNAMIC_VERTS[offset + 3] = g;
+            DYNAMIC_VERTS[offset + 4] = b; DYNAMIC_VERTS[offset + 5] = a;
+            DYNAMIC_VERTS[offset + 6] = 0f; DYNAMIC_VERTS[offset + 7] = 0f;
+
+            // Vertex 2 (Bottom edge)
+            DYNAMIC_VERTS[offset + 8] = current.x - nx * halfThick;
+            DYNAMIC_VERTS[offset + 9] = current.y - ny * halfThick;
+            DYNAMIC_VERTS[offset + 10] = r; DYNAMIC_VERTS[offset + 11] = g;
+            DYNAMIC_VERTS[offset + 12] = b; DYNAMIC_VERTS[offset + 13] = a;
+            DYNAMIC_VERTS[offset + 14] = 0f; DYNAMIC_VERTS[offset + 15] = 0f;
+        }
+
+        // 2. Generate Indices (Connecting the vertices into quads)
+        int idxOffset = 0;
+        for (int i = 0; i < numPoints - 1; i++) {
+            int v = i * 2;
+
+            DYNAMIC_INDICES[idxOffset++] = v;
+            DYNAMIC_INDICES[idxOffset++] = v + 1;
+            DYNAMIC_INDICES[idxOffset++] = v + 2;
+
+            DYNAMIC_INDICES[idxOffset++] = v + 2;
+            DYNAMIC_INDICES[idxOffset++] = v + 1;
+            DYNAMIC_INDICES[idxOffset++] = v + 3;
+        }
+
+        // 3. Submit entire curve in ONE call
+        renderer.submit(DYNAMIC_VERTS, DYNAMIC_INDICES, 0, 0);
+    }
+
     public static void circle(Circle circle, Colors color) {
         circle(circle, color.getColor());
     }
@@ -149,7 +286,6 @@ public class Draw {
     public static void triangle(Triangle tri, Color color) {
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
 
-
         setTriVerts(
                 tri.getPointA().x, tri.getPointA().y, r, g, b, a, 0f, 0f,
                 tri.getPointB().x, tri.getPointB().y, r, g, b, a, 0f, 0f,
@@ -158,8 +294,6 @@ public class Draw {
 
         renderer.submit(TRI_VERTS, 0, 0);
     }
-
-
 
     private static void setQuadVerts(float x0, float y0, float r0, float g0, float b0, float a0, float u0, float v0,
                                      float x1, float y1, float r1, float g1, float b1, float a1, float u1, float v1,

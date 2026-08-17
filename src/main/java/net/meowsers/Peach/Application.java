@@ -2,6 +2,7 @@ package net.meowsers.Peach;
 
 import net.meowsers.Peach.Graphics.Draw;
 import net.meowsers.Peach.Graphics.Renderer;
+import net.meowsers.Peach.Utils.Input;
 import net.meowsers.Peach.Utils.Time;
 
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
@@ -28,6 +29,7 @@ public abstract class Application {
         renderer = peach.getRenderer();
 
         new Draw(renderer);
+        Input.init(window.getHandle());
 
         start();
 
@@ -40,6 +42,8 @@ public abstract class Application {
             update(deltaTime);
 
             renderer.render(width, height);
+
+            Input.endFrame();
 
             glfwSwapBuffers(window.getHandle());
         }
