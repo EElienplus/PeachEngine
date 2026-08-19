@@ -1,11 +1,10 @@
-package net.meowsers.Peach.Graphics;
+package net.meowsers.Peach.Drawables;
 
 import org.lwjgl.BufferUtils;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.GL_CLAMP_TO_EDGE;
 import static org.lwjgl.stb.STBImage.*;
 
 public class Texture {
@@ -14,6 +13,7 @@ public class Texture {
     private int textureID;
     private int width, height;
 
+    // Load from disk using STB
     public Texture(String filepath) {
         this.filepath = filepath;
 
@@ -46,6 +46,24 @@ public class Texture {
         } else {
             System.err.println("Error: (Texture) Could not load image file: '" + filepath + "'");
         }
+    }
+
+    // Load directly from raw buffer (used by FreeType glyphs)
+    public Texture(ByteBuffer buffer, int width, int height, int format) {
+        this.filepath = "";
+        this.width = width;
+        this.height = height;
+
+        textureID = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, textureID);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, buffer);
     }
 
     public void bind() {

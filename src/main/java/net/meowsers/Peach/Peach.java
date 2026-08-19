@@ -30,7 +30,6 @@ public class Peach {
 
         renderer = new Renderer(shader);
 
-        glfwMakeContextCurrent(window.getHandle());
     }
 
     public void update() {

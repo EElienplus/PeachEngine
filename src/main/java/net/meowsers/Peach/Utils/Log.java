@@ -14,7 +14,7 @@ public class Log {
             System.out.println(ConsoleColor.YELLOW.colorize(message));
         } else if (type == LogType.Error) {
             try {
-                throw new Exception(message + ". Error Code: " + glfwGetError(null));
+                throw new Exception(message);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

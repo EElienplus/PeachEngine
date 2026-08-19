@@ -1,25 +1,22 @@
 package net.meowsers.Peach.Graphics;
 
-import net.meowsers.Peach.Shapes.Circle;
-import net.meowsers.Peach.Shapes.Curve;
-import net.meowsers.Peach.Shapes.Line;
-import net.meowsers.Peach.Shapes.Rectangle;
-import net.meowsers.Peach.Shapes.Triangle;
+import net.meowsers.Peach.Drawables.*;
 import net.meowsers.Peach.Utils.Color;
 import net.meowsers.Peach.Utils.Enums.Colors;
 import org.joml.Vector2f;
 
 import java.util.List;
+import java.util.Map;
 
 public class Draw {
     private static Renderer renderer;
 
-    // Pre alocate static buffers
+    // Pre-allocate static buffers
     private static final int[] QUAD_INDICES = {0, 1, 2, 2, 3, 0};
     private static final float[] QUAD_VERTS = new float[4 * RenderBatch.INPUT_VERTEX_SIZE];
     private static final float[] TRI_VERTS = new float[3 * RenderBatch.INPUT_VERTEX_SIZE];
 
-    // pre calculated circle stuff
+    // Pre-calculated circle values
     private static final int CIRCLE_SEGMENTS = 64;
     private static final float[] CIRCLE_COS = new float[CIRCLE_SEGMENTS];
     private static final float[] CIRCLE_SIN = new float[CIRCLE_SEGMENTS];
@@ -39,13 +36,13 @@ public class Draw {
     }
 
     static {
-        // pre calculate unit circle when the engine starts
+        // Pre-calculate unit circle when engine starts
         for (int i = 0; i < CIRCLE_SEGMENTS; i++) {
             float theta = (float) (2.0f * Math.PI * i / CIRCLE_SEGMENTS);
             CIRCLE_COS[i] = (float) Math.cos(theta);
             CIRCLE_SIN[i] = (float) Math.sin(theta);
         }
-        // pre calculate circle fan indices
+        // Pre-calculate circle fan indices
         int idx = 0;
         for (int i = 0; i < CIRCLE_SEGMENTS; i++) {
             CIRCLE_INDICES[idx++] = 0;
@@ -95,6 +92,44 @@ public class Draw {
         image(texture, x, y, 1.f);
     }
 
+    public static void text(Text text, float x, float y, Colors color) {
+        text(text, x, y, color.getColor());
+    }
+    public static void text(Text text, float x, float y, Color color) {
+        float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
+        Text.FontData fontData = text.getFontData();
+
+        if (fontData == null || fontData.atlasTexture == null) return;
+
+        // Scale 128px high-res glyphs down to requested font size
+        float scale = (float) text.getFontSize() / text.getBakedSize();
+        float cursorX = x;
+
+        for (char c : text.getString().toCharArray()) {
+            Text.Glyph glyph = fontData.glyphs.get(c);
+            if (glyph == null) continue;
+
+            float xPos = cursorX + (glyph.bearingX * scale);
+            float yPos = y - (glyph.bearingY * scale);
+
+            float w = glyph.width * scale;
+            float h = glyph.height * scale;
+
+            if (w > 0 && h > 0) {
+                setQuadVerts(
+                        xPos, yPos,         r, g, b, a, glyph.u0, glyph.v0,
+                        xPos, yPos + h,     r, g, b, a, glyph.u0, glyph.v1,
+                        xPos + w, yPos + h, r, g, b, a, glyph.u1, glyph.v1,
+                        xPos + w, yPos,     r, g, b, a, glyph.u1, glyph.v0
+                );
+
+                renderer.submit(QUAD_VERTS, QUAD_INDICES, fontData.atlasTexture.getTextureID(), 0);
+            }
+
+            cursorX += (glyph.advance * scale);
+        }
+    }
+
     public static void line(Line line, int thickness, Colors color) {
         line(line, thickness, color.getColor());
     }
@@ -138,7 +173,6 @@ public class Draw {
     public static void curve(Curve curve, int thickness, Colors color) {
         curve(curve, thickness, color.getColor());
     }
-
     public static void curve(Curve curve, int thickness, Color color) {
         List<Vector2f> points = curve.getPoints();
         int numPoints = points.size();
@@ -154,13 +188,11 @@ public class Draw {
         float halfThick = thickness / 2.0f;
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
 
-        // Generate Vertices
         for (int i = 0; i < numPoints; i++) {
             Vector2f current = points.get(i);
             float nx, ny;
 
             if (i == 0) {
-                // First point normal
                 Vector2f next = points.get(i + 1);
                 float dx = next.x - current.x;
                 float dy = next.y - current.y;
@@ -168,7 +200,6 @@ public class Draw {
                 nx = -dy / len;
                 ny = dx / len;
             } else if (i == numPoints - 1) {
-                // Last point normal
                 Vector2f prev = points.get(i - 1);
                 float dx = current.x - prev.x;
                 float dy = current.y - prev.y;
@@ -176,7 +207,6 @@ public class Draw {
                 nx = -dy / len;
                 ny = dx / len;
             } else {
-                // Middle points: Calculate miter joint (average of the two segment normals)
                 Vector2f prev = points.get(i - 1);
                 Vector2f next = points.get(i + 1);
 
@@ -190,42 +220,34 @@ public class Draw {
                 float len2 = (float) Math.sqrt(dir2X * dir2X + dir2Y * dir2Y);
                 dir2X /= len2; dir2Y /= len2;
 
-                // Tangent is the normalized sum of the two directions
                 float tangentX = dir1X + dir2X;
                 float tangentY = dir1Y + dir2Y;
                 float tangentLen = (float) Math.sqrt(tangentX * tangentX + tangentY * tangentY);
 
                 if (tangentLen == 0) {
-                    // Edge case: curve doubles back on itself perfectly
                     nx = -dir1Y;
                     ny = dir1X;
                 } else {
                     tangentX /= tangentLen;
                     tangentY /= tangentLen;
-                    // Normal is perpendicular to the tangent
                     nx = -tangentY;
                     ny = tangentX;
 
-                    // Miter thickness correction (prevents corners from looking "pinched")
                     float dot = nx * (-dir1Y) + ny * dir1X;
-                    // Clamp dot product to prevent extreme spikes on very sharp turns
                     dot = Math.max(0.1f, Math.min(dot, 1.0f));
                     nx /= dot;
                     ny /= dot;
                 }
             }
 
-            // Add top and bottom vertices for this point
             int offset = i * 2 * RenderBatch.INPUT_VERTEX_SIZE;
 
-            // Vertex 1 (Top edge)
             DYNAMIC_VERTS[offset] = current.x + nx * halfThick;
             DYNAMIC_VERTS[offset + 1] = current.y + ny * halfThick;
             DYNAMIC_VERTS[offset + 2] = r; DYNAMIC_VERTS[offset + 3] = g;
             DYNAMIC_VERTS[offset + 4] = b; DYNAMIC_VERTS[offset + 5] = a;
             DYNAMIC_VERTS[offset + 6] = 0f; DYNAMIC_VERTS[offset + 7] = 0f;
 
-            // Vertex 2 (Bottom edge)
             DYNAMIC_VERTS[offset + 8] = current.x - nx * halfThick;
             DYNAMIC_VERTS[offset + 9] = current.y - ny * halfThick;
             DYNAMIC_VERTS[offset + 10] = r; DYNAMIC_VERTS[offset + 11] = g;
@@ -233,7 +255,6 @@ public class Draw {
             DYNAMIC_VERTS[offset + 14] = 0f; DYNAMIC_VERTS[offset + 15] = 0f;
         }
 
-        // 2. Generate Indices (Connecting the vertices into quads)
         int idxOffset = 0;
         for (int i = 0; i < numPoints - 1; i++) {
             int v = i * 2;
@@ -247,7 +268,6 @@ public class Draw {
             DYNAMIC_INDICES[idxOffset++] = v + 3;
         }
 
-        // 3. Submit entire curve in ONE call
         renderer.submit(DYNAMIC_VERTS, DYNAMIC_INDICES, 0, 0);
     }
 
@@ -259,12 +279,10 @@ public class Draw {
         float radius = circle.getRadius();
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
 
-        // Center vertex
         CIRCLE_VERTS[0] = center.x; CIRCLE_VERTS[1] = center.y;
         CIRCLE_VERTS[2] = r; CIRCLE_VERTS[3] = g; CIRCLE_VERTS[4] = b; CIRCLE_VERTS[5] = a;
         CIRCLE_VERTS[6] = 0f; CIRCLE_VERTS[7] = 0f;
 
-        // Perimeter vertices (using the pre-calculated arrays)
         for (int i = 0; i < CIRCLE_SEGMENTS; i++) {
             int offset = (i + 1) * RenderBatch.INPUT_VERTEX_SIZE;
             CIRCLE_VERTS[offset]     = center.x + radius * CIRCLE_COS[i];
@@ -294,6 +312,69 @@ public class Draw {
 
         renderer.submit(TRI_VERTS, 0, 0);
     }
+
+    public static void arrow(Arrow arrow, int thickness, float headLength, float headWidth, Colors color) {
+        arrow(arrow, thickness, headLength, headWidth, color.getColor());
+    }
+    public static void arrow(Arrow arrow, int thickness, float headLength, float headWidth, Color color) {
+        Line line = arrow.getLine();
+        if (line == null) return;
+
+        Vector2f start = line.getStartPos();
+        Vector2f end = line.getEndPos();
+
+        float dx = end.x - start.x;
+        float dy = end.y - start.y;
+        float length = (float) Math.sqrt(dx * dx + dy * dy);
+
+        if (length == 0) return;
+
+        float dirX = dx / length;
+        float dirY = dy / length;
+
+        float sweep = headLength * 0.35f;
+
+        float baseX = end.x - dirX * headLength;
+        float baseY = end.y - dirY * headLength;
+
+        float indentX = baseX + dirX * sweep;
+        float indentY = baseY + dirY * sweep;
+
+        Vector2f shaftEnd = new Vector2f(indentX, indentY);
+        Line shaft = new Line(start, shaftEnd);
+        line(shaft, thickness, color);
+
+        circle(new Circle(start, (int) (thickness / 2.0f)), color);
+
+        float perpX = -dirY;
+        float perpY = dirX;
+        float halfWidth = headWidth / 2.0f;
+
+        float leftX = baseX + perpX * halfWidth;
+        float leftY = baseY + perpY * halfWidth;
+
+        float rightX = baseX - perpX * halfWidth;
+        float rightY = baseY - perpY * halfWidth;
+
+
+        float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
+
+        setQuadVerts(
+                end.x, end.y,       r, g, b, a, 0f, 0f, // P0: The Tip
+                leftX, leftY,       r, g, b, a, 0f, 0f, // P1: Left Wing
+                indentX, indentY,   r, g, b, a, 0f, 0f, // P2: Inner Indent
+                rightX, rightY,     r, g, b, a, 0f,     0f  // P3: Right Wing
+        );
+
+        renderer.submit(QUAD_VERTS, QUAD_INDICES, 0, 0);
+    }
+    public static void arrow(Arrow arrow, int thickness, Colors color) {
+        arrow(arrow, thickness, color.getColor());
+    }
+    public static void arrow(Arrow arrow, int thickness, Color color) {
+        arrow(arrow, thickness, thickness * 5.0f, thickness * 4.0f, color);
+    }
+
 
     private static void setQuadVerts(float x0, float y0, float r0, float g0, float b0, float a0, float u0, float v0,
                                      float x1, float y1, float r1, float g1, float b1, float a1, float u1, float v1,

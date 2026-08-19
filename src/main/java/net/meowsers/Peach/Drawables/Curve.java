@@ -1,5 +1,6 @@
-package net.meowsers.Peach.Shapes;
+package net.meowsers.Peach.Drawables;
 
+import net.meowsers.Peach.Utils.LiveVector2f;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -27,14 +28,19 @@ public class Curve {
     }
 
     public void rebuild() {
+        Vector2f start = getP0();
+        Vector2f control1 = getP1();
+        Vector2f control2 = getP2();
+        Vector2f end = getP3();
+
         points.clear();
         lines.clear();
 
         // Add the very first point
-        points.add(new Vector2f(p0.x, p0.y));
+        points.add(new Vector2f(start.x, start.y));
 
         // Recursively subdivide and add points
-        subdivide(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, 0);
+        subdivide(start.x, start.y, control1.x, control1.y, control2.x, control2.y, end.x, end.y, 0);
 
         // Build lines from the resulting optimized point list
         populateLinesList();
@@ -106,30 +112,70 @@ public class Curve {
         float tt = t * t;
         float uu = u * u;
 
+        Vector2f start = getP0();
+        Vector2f control1 = getP1();
+        Vector2f control2 = getP2();
+        Vector2f end = getP3();
+
         // Explicit polynomial weights: (1-t)^3, 3(1-t)^2*t, 3(1-t)*t^2, t^3
         float w0 = uu * u;
         float w1 = 3 * uu * t;
         float w2 = 3 * u * tt;
         float w3 = tt * t;
 
-        float pX = w0 * p0.x + w1 * p1.x + w2 * p2.x + w3 * p3.x;
-        float pY = w0 * p0.y + w1 * p1.y + w2 * p2.y + w3 * p3.y;
+        float pX = w0 * start.x + w1 * control1.x + w2 * control2.x + w3 * end.x;
+        float pY = w0 * start.y + w1 * control1.y + w2 * control2.y + w3 * end.y;
 
         return new Vector2f(pX, pY);
     }
 
-    public List<Vector2f> getPoints() { return points; }
-    public List<Line> getLines() { return lines; }
+    public List<Vector2f> getPoints() {
+        rebuild();
+        return points;
+    }
 
-    public float getTolerance() { return tolerance; }
-    public void setTolerance(float tolerance) { this.tolerance = tolerance; }
+    public List<Line> getLines() {
+        rebuild();
+        return lines;
+    }
 
-    public Vector2f getP0() { return p0; }
-    public void setP0(Vector2f p0) { this.p0 = p0; }
-    public Vector2f getP1() { return p1; }
-    public void setP1(Vector2f p1) { this.p1 = p1; }
-    public Vector2f getP2() { return p2; }
-    public void setP2(Vector2f p2) { this.p2 = p2; }
-    public Vector2f getP3() { return p3; }
-    public void setP3(Vector2f p3) { this.p3 = p3; }
+    public float getTolerance() {
+        return tolerance;
+    }
+
+    public void setTolerance(float tolerance) {
+        this.tolerance = tolerance;
+    }
+
+    public Vector2f getP0() {
+        return LiveVector2f.resolve(p0);
+    }
+
+    public void setP0(Vector2f p0) {
+        this.p0.set(p0);
+    }
+
+    public Vector2f getP1() {
+        return LiveVector2f.resolve(p1);
+    }
+
+    public void setP1(Vector2f p1) {
+        this.p1.set(p1);
+    }
+
+    public Vector2f getP2() {
+        return LiveVector2f.resolve(p2);
+    }
+
+    public void setP2(Vector2f p2) {
+        this.p2.set(p2);
+    }
+
+    public Vector2f getP3() {
+        return LiveVector2f.resolve(p3);
+    }
+
+    public void setP3(Vector2f p3) {
+        this.p3.set(p3);
+    }
 }

@@ -16,6 +16,7 @@ public class Window {
 
     private long handle = 0;
     private boolean running;
+    private Color backgroundColor = Colors.Black.getColor();
 
     public Window(String title, int width, int height) {
         running = true;
@@ -69,7 +70,16 @@ public class Window {
     }
 
     public void clearBackground(Color color) {
-        glClearColor(color.getR(), color.getG(),color.getB(), color.getA());
+        if(color == null) {
+            throw new IllegalArgumentException("Background color can't be null.");
+        }
+
+        backgroundColor = color;
+        clearBackground();
+    }
+
+    public void clearBackground() {
+        glClearColor(backgroundColor.getR(), backgroundColor.getG(),backgroundColor.getB(), backgroundColor.getA());
         glClear(GL_COLOR_BUFFER_BIT);
     }
 

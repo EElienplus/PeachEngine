@@ -113,7 +113,6 @@ public class RenderBatch implements Comparable<RenderBatch> {
         if (projectionMatrix != null) shader.uploadMat4f("uProjection", projectionMatrix);
         if (viewMatrix != null) shader.uploadMat4f("uView", viewMatrix);
 
-        // Bind active textures and map unused shader sampler slots to a safe fallback unit
         int activeCount = textureIds.size();
         int[] uploadSlots = new int[8];
         for (int i = 0; i < 8; i++) {

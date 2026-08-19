@@ -1,5 +1,6 @@
-package net.meowsers.Peach.Shapes;
+package net.meowsers.Peach.Drawables;
 
+import net.meowsers.Peach.Utils.LiveVector2f;
 import org.joml.Vector2f;
 
 public class Circle {
@@ -7,11 +8,11 @@ public class Circle {
     int radius;
 
     public Vector2f getCenter() {
-        return center;
+        return LiveVector2f.resolve(center);
     }
 
     public void setCenter(Vector2f center) {
-        this.center = center;
+        this.center.set(center);
     }
 
     public int getRadius() {

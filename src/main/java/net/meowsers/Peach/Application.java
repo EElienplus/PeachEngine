@@ -1,11 +1,12 @@
 package net.meowsers.Peach;
 
+import net.meowsers.Peach.Animation.AnimationTimeline;
 import net.meowsers.Peach.Graphics.Draw;
 import net.meowsers.Peach.Graphics.Renderer;
+import net.meowsers.Peach.Graphics.Visualize;
 import net.meowsers.Peach.Utils.Input;
 import net.meowsers.Peach.Utils.Time;
 
-import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 public abstract class Application {
@@ -13,12 +14,9 @@ public abstract class Application {
     Peach peach;
     Window window;
     Renderer renderer;
+    private final AnimationTimeline animationTimeline = new AnimationTimeline();
 
-    private float deltaTime;
-
-    public abstract void start();
-    public abstract void update(float deltaTime);
-    public abstract void shutdown();
+    public abstract void script();
 
     public void run(String title, int width, int height) {
         peach = new Peach();
@@ -29,17 +27,18 @@ public abstract class Application {
         renderer = peach.getRenderer();
 
         new Draw(renderer);
+        new Visualize(renderer);
         Input.init(window.getHandle());
 
-        start();
+        animationTimeline.record(this::script);
 
-        while(window.isRunning()) {
+        while (window.isRunning()) {
             Time.update();
             peach.update();
 
-            deltaTime = Time.getDeltaTime();
-
-            update(deltaTime);
+            window.clearBackground();
+            animationTimeline.update(Time.getDeltaTime());
+            animationTimeline.render();
 
             renderer.render(width, height);
 
@@ -47,14 +46,24 @@ public abstract class Application {
 
             glfwSwapBuffers(window.getHandle());
         }
-        shutdown();
+
         peach.shutdown();
-
-
     }
 
     public Window getWindow() {
         return window;
+    }
+
+    public void animateTogether(Runnable animations) {
+        animationTimeline.recordTogether(animations);
+    }
+
+    public void wait(float duration) {
+        animationTimeline.recordWait(duration);
+    }
+
+    public void wait(int duration) {
+        wait((float) duration);
     }
 
 }
