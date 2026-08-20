@@ -59,7 +59,6 @@ public class Window {
     public void update() {
         running = !glfwWindowShouldClose(handle);
         glfwPollEvents();
-
     }
 
     private void frameBufferSizeCallback(long window, int width, int height) {
@@ -69,7 +68,6 @@ public class Window {
     public long getWindow() {
         return handle;
     }
-
     public boolean isRunning() {
         return running;
     }

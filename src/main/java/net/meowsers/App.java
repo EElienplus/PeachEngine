@@ -154,10 +154,11 @@ public class App extends Application {
             Animate.curve(curve5, new Vector2f(650, 400), new Vector2f(650, 350), new Vector2f(550, 250), new Vector2f(750, 300), 0.75f);
         });
 
-        Animate.textString(curveShowcaseText1, "Pretty cool, no?", 1);
-        
-        Animate.textPosition(curveShowcaseText1, new Vector2f(Text.getCenteredX(getWindow(), curveShowcaseText1, "Pretty cool, no?"), 50), 1);
+        animateTogether(() -> {
+            Animate.textString(curveShowcaseText1, "Pretty cool, no?", 1);
+            Animate.textPosition(curveShowcaseText1, new Vector2f(Text.getCenteredX(getWindow(), curveShowcaseText1, "Pretty cool, no?"), 50), 1);
 
+        });
 
     }
 }

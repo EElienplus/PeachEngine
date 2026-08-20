@@ -28,6 +28,7 @@ public abstract class Application {
 
         new Draw(renderer);
         new Visualize(renderer);
+
         Input.init(window.getHandle());
 
         animationTimeline.record(this::script);
@@ -61,7 +62,6 @@ public abstract class Application {
     public void wait(float duration) {
         animationTimeline.recordWait(duration);
     }
-
     public void wait(int duration) {
         wait((float) duration);
     }

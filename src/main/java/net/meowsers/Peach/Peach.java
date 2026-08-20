@@ -44,7 +44,6 @@ public class Peach {
     public Window getWindow() {
         return window;
     }
-
     public Renderer getRenderer() {
         return renderer;
     }

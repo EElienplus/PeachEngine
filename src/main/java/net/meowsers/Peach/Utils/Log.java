@@ -3,6 +3,8 @@ package net.meowsers.Peach.Utils;
 import net.meowsers.Peach.Utils.Enums.ConsoleColor;
 import net.meowsers.Peach.Utils.Enums.LogType;
 
+import java.io.Console;
+
 import static org.lwjgl.glfw.GLFW.*;
 
 public class Log {
@@ -14,7 +16,7 @@ public class Log {
             System.out.println(ConsoleColor.YELLOW.colorize(message));
         } else if (type == LogType.Error) {
             try {
-                throw new Exception(message);
+                throw new Exception();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

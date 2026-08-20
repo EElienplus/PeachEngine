@@ -55,6 +55,10 @@ public class Renderer {
         submit(vertices, null, textureId, zIndex);
     }
 
+    public void destroy() {
+        batches.clear();
+    }
+
     public void render(float windowWidth, float windowHeight) {
         Matrix4f projectionMatrix = new Matrix4f().ortho2D(0, windowWidth, windowHeight, 0);
         Matrix4f viewMatrix = new Matrix4f();
@@ -63,9 +67,5 @@ public class Renderer {
             batch.render(projectionMatrix, viewMatrix);
             batch.clear();
         }
-    }
-
-    public void destroy() {
-        batches.clear();
     }
 }
