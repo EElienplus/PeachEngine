@@ -1,6 +1,8 @@
 package net.meowsers.Peach.Animation;
 
 import net.meowsers.Peach.Drawables.Circle;
+import net.meowsers.Peach.Drawables.Curve;
+import net.meowsers.Peach.Drawables.Group;
 import net.meowsers.Peach.Drawables.Line;
 import net.meowsers.Peach.Drawables.Rectangle;
 import net.meowsers.Peach.Drawables.Text;
@@ -15,6 +17,11 @@ public class Animate extends TimedAnimation {
     }
 
     @FunctionalInterface
+    public interface BeginAction {
+        void begin();
+    }
+
+    @FunctionalInterface
     public interface FloatSetter {
         void set(float value);
     }
@@ -24,15 +31,21 @@ public class Animate extends TimedAnimation {
         void set(Vector2f value);
     }
 
+    private final BeginAction beginAction;
     private final ProgressAction progressAction;
 
     private Animate(float duration, Ease ease, ProgressAction progressAction) {
+        this(duration, ease, null, progressAction);
+    }
+
+    private Animate(float duration, Ease ease, BeginAction beginAction, ProgressAction progressAction) {
         super(duration, ease);
 
         if (progressAction == null) {
             throw new IllegalArgumentException("Progress action can't be null.");
         }
 
+        this.beginAction = beginAction;
         this.progressAction = progressAction;
     }
 
@@ -41,7 +54,11 @@ public class Animate extends TimedAnimation {
     }
 
     public static Animate custom(float duration, Ease ease, ProgressAction progressAction) {
-        return AnimationTimeline.record(new Animate(duration, ease, progressAction));
+        return custom(duration, ease, null, progressAction);
+    }
+
+    public static Animate custom(float duration, Ease ease, BeginAction beginAction, ProgressAction progressAction) {
+        return AnimationTimeline.record(new Animate(duration, ease, beginAction, progressAction));
     }
 
     public static Animate floatValue(float from, float to, float duration, FloatSetter setter) {
@@ -83,10 +100,14 @@ public class Animate extends TimedAnimation {
             throw new IllegalArgumentException("Line and target end position can't be null.");
         }
 
-        Vector2f startEndPos = new Vector2f(line.getEndPos());
+        Vector2f startEndPos = new Vector2f();
         Vector2f targetEndPosCopy = new Vector2f(targetEndPos);
 
-        return vector2(startEndPos, targetEndPosCopy, duration, ease, line::setEndPos);
+        return custom(duration, ease, () -> {
+            startEndPos.set(line.getEndPos());
+        }, (progress) -> {
+            line.setEndPos(lerp(startEndPos, targetEndPosCopy, progress));
+        });
     }
 
     public static Animate lineStart(Line line, Vector2f targetStartPos, float duration) {
@@ -98,10 +119,45 @@ public class Animate extends TimedAnimation {
             throw new IllegalArgumentException("Line and target start position can't be null.");
         }
 
-        Vector2f startStartPos = new Vector2f(line.getStartPos());
+        Vector2f startStartPos = new Vector2f();
         Vector2f targetStartPosCopy = new Vector2f(targetStartPos);
 
-        return vector2(startStartPos, targetStartPosCopy, duration, ease, line::setStartPos);
+        return custom(duration, ease, () -> {
+            startStartPos.set(line.getStartPos());
+        }, (progress) -> {
+            line.setStartPos(lerp(startStartPos, targetStartPosCopy, progress));
+        });
+    }
+
+    public static Animate rectangle(Rectangle rectangle, float targetX, float targetY, float duration) {
+        return rectangle(rectangle, targetX, targetY, duration, Ease.InOut);
+    }
+
+    public static Animate rectangle(Rectangle rectangle, float targetX, float targetY, float duration, Ease ease) {
+        if (rectangle == null) {
+            throw new IllegalArgumentException("Rectangle can't be null.");
+        }
+
+        float[] start = new float[2];
+
+        return custom(duration, ease, () -> {
+            start[0] = rectangle.getX();
+            start[1] = rectangle.getY();
+        }, (progress) -> {
+            rectangle.setX(lerp(start[0], targetX, progress));
+            rectangle.setY(lerp(start[1], targetY, progress));
+        });
+    }
+
+    public static Animate rectangle(Rectangle rectangle, Vector2f targetPosition, float duration) {
+        return rectangle(rectangle, targetPosition, duration, Ease.InOut);
+    }
+
+    public static Animate rectangle(Rectangle rectangle, Vector2f targetPosition, float duration, Ease ease) {
+        if (targetPosition == null) {
+            throw new IllegalArgumentException("Target position can't be null.");
+        }
+        return rectangle(rectangle, targetPosition.x, targetPosition.y, duration, ease);
     }
 
     public static Animate rectangle(Rectangle rectangle, float targetX, float targetY, float targetW, float targetH, float duration) {
@@ -114,17 +170,50 @@ public class Animate extends TimedAnimation {
             throw new IllegalArgumentException("Rectangle can't be null.");
         }
 
-        float startX = rectangle.getX();
-        float startY = rectangle.getY();
-        float startW = rectangle.getW();
-        float startH = rectangle.getH();
+        float[] start = new float[4];
 
-        return custom(duration, ease, (progress) -> {
-            rectangle.setX(lerp(startX, targetX, progress));
-            rectangle.setY(lerp(startY, targetY, progress));
-            rectangle.setW(lerp(startW, targetW, progress));
-            rectangle.setH(lerp(startH, targetH, progress));
+        return custom(duration, ease, () -> {
+            start[0] = rectangle.getX();
+            start[1] = rectangle.getY();
+            start[2] = rectangle.getW();
+            start[3] = rectangle.getH();
+        }, (progress) -> {
+            rectangle.setX(lerp(start[0], targetX, progress));
+            rectangle.setY(lerp(start[1], targetY, progress));
+            rectangle.setW(lerp(start[2], targetW, progress));
+            rectangle.setH(lerp(start[3], targetH, progress));
         });
+    }
+
+    public static Animate rectangleMove(Rectangle rectangle, float deltaX, float deltaY, float duration) {
+        return rectangleMove(rectangle, deltaX, deltaY, duration, Ease.InOut);
+    }
+
+    public static Animate rectangleMove(Rectangle rectangle, float deltaX, float deltaY, float duration, Ease ease) {
+        if (rectangle == null) {
+            throw new IllegalArgumentException("Rectangle can't be null.");
+        }
+
+        float[] start = new float[2];
+
+        return custom(duration, ease, () -> {
+            start[0] = rectangle.getX();
+            start[1] = rectangle.getY();
+        }, (progress) -> {
+            rectangle.setX(lerp(start[0], start[0] + deltaX, progress));
+            rectangle.setY(lerp(start[1], start[1] + deltaY, progress));
+        });
+    }
+
+    public static Animate rectangleMove(Rectangle rectangle, Vector2f delta, float duration) {
+        return rectangleMove(rectangle, delta, duration, Ease.InOut);
+    }
+
+    public static Animate rectangleMove(Rectangle rectangle, Vector2f delta, float duration, Ease ease) {
+        if (delta == null) {
+            throw new IllegalArgumentException("Delta can't be null.");
+        }
+        return rectangleMove(rectangle, delta.x, delta.y, duration, ease);
     }
 
     public static Animate circle(Circle circle, Vector2f targetCenter, int targetRadius, float duration) {
@@ -136,14 +225,187 @@ public class Animate extends TimedAnimation {
             throw new IllegalArgumentException("Circle and target center can't be null.");
         }
 
-        Vector2f startCenter = new Vector2f(circle.getCenter());
+        Vector2f startCenter = new Vector2f();
         Vector2f targetCenterCopy = new Vector2f(targetCenter);
-        int startRadius = circle.getRadius();
+        int[] startRadius = new int[1];
 
-        return custom(duration, ease, (progress) -> {
+        return custom(duration, ease, () -> {
+            startCenter.set(circle.getCenter());
+            startRadius[0] = circle.getRadius();
+        }, (progress) -> {
             circle.setCenter(lerp(startCenter, targetCenterCopy, progress));
-            circle.setRadius(Math.round(lerp(startRadius, targetRadius, progress)));
+            circle.setRadius(Math.round(lerp(startRadius[0], targetRadius, progress)));
         });
+    }
+
+    public static Animate curve(Curve curve, Vector2f targetP0, Vector2f targetP1, Vector2f targetP2, Vector2f targetP3, float duration) {
+        return curve(curve, targetP0, targetP1, targetP2, targetP3, duration, Ease.InOut);
+    }
+
+    public static Animate curve(Curve curve, Vector2f targetP0, Vector2f targetP1, Vector2f targetP2, Vector2f targetP3, float duration, Ease ease) {
+        if (curve == null) {
+            throw new IllegalArgumentException("Curve can't be null.");
+        }
+
+        Vector2f startP0 = new Vector2f();
+        Vector2f startP1 = new Vector2f();
+        Vector2f startP2 = new Vector2f();
+        Vector2f startP3 = new Vector2f();
+
+        Vector2f targetP0Copy = targetP0 != null ? new Vector2f(targetP0) : null;
+        Vector2f targetP1Copy = targetP1 != null ? new Vector2f(targetP1) : null;
+        Vector2f targetP2Copy = targetP2 != null ? new Vector2f(targetP2) : null;
+        Vector2f targetP3Copy = targetP3 != null ? new Vector2f(targetP3) : null;
+
+        return custom(duration, ease, () -> {
+            startP0.set(curve.getP0());
+            startP1.set(curve.getP1());
+            startP2.set(curve.getP2());
+            startP3.set(curve.getP3());
+        }, (progress) -> {
+            if (targetP0Copy != null) curve.setP0(lerp(startP0, targetP0Copy, progress));
+            if (targetP1Copy != null) curve.setP1(lerp(startP1, targetP1Copy, progress));
+            if (targetP2Copy != null) curve.setP2(lerp(startP2, targetP2Copy, progress));
+            if (targetP3Copy != null) curve.setP3(lerp(startP3, targetP3Copy, progress));
+        });
+    }
+
+    public static Animate curveP0(Curve curve, Vector2f targetP0, float duration) {
+        return curveP0(curve, targetP0, duration, Ease.InOut);
+    }
+
+    public static Animate curveP0(Curve curve, Vector2f targetP0, float duration, Ease ease) {
+        if (curve == null || targetP0 == null) {
+            throw new IllegalArgumentException("Curve and target point can't be null.");
+        }
+        Vector2f start = new Vector2f();
+        Vector2f targetCopy = new Vector2f(targetP0);
+        return custom(duration, ease, () -> {
+            start.set(curve.getP0());
+        }, (progress) -> {
+            curve.setP0(lerp(start, targetCopy, progress));
+        });
+    }
+
+    public static Animate curveP0(Curve curve, float targetX, float targetY, float duration) {
+        return curveP0(curve, new Vector2f(targetX, targetY), duration, Ease.InOut);
+    }
+
+    public static Animate curveP0(Curve curve, float targetX, float targetY, float duration, Ease ease) {
+        return curveP0(curve, new Vector2f(targetX, targetY), duration, ease);
+    }
+
+    public static Animate curveP1(Curve curve, Vector2f targetP1, float duration) {
+        return curveP1(curve, targetP1, duration, Ease.InOut);
+    }
+
+    public static Animate curveP1(Curve curve, Vector2f targetP1, float duration, Ease ease) {
+        if (curve == null || targetP1 == null) {
+            throw new IllegalArgumentException("Curve and target point can't be null.");
+        }
+        Vector2f start = new Vector2f();
+        Vector2f targetCopy = new Vector2f(targetP1);
+        return custom(duration, ease, () -> {
+            start.set(curve.getP1());
+        }, (progress) -> {
+            curve.setP1(lerp(start, targetCopy, progress));
+        });
+    }
+
+    public static Animate curveP1(Curve curve, float targetX, float targetY, float duration) {
+        return curveP1(curve, new Vector2f(targetX, targetY), duration, Ease.InOut);
+    }
+
+    public static Animate curveP1(Curve curve, float targetX, float targetY, float duration, Ease ease) {
+        return curveP1(curve, new Vector2f(targetX, targetY), duration, ease);
+    }
+
+    public static Animate curveP2(Curve curve, Vector2f targetP2, float duration) {
+        return curveP2(curve, targetP2, duration, Ease.InOut);
+    }
+
+    public static Animate curveP2(Curve curve, Vector2f targetP2, float duration, Ease ease) {
+        if (curve == null || targetP2 == null) {
+            throw new IllegalArgumentException("Curve and target point can't be null.");
+        }
+        Vector2f start = new Vector2f();
+        Vector2f targetCopy = new Vector2f(targetP2);
+        return custom(duration, ease, () -> {
+            start.set(curve.getP2());
+        }, (progress) -> {
+            curve.setP2(lerp(start, targetCopy, progress));
+        });
+    }
+
+    public static Animate curveP2(Curve curve, float targetX, float targetY, float duration) {
+        return curveP2(curve, new Vector2f(targetX, targetY), duration, Ease.InOut);
+    }
+
+    public static Animate curveP2(Curve curve, float targetX, float targetY, float duration, Ease ease) {
+        return curveP2(curve, new Vector2f(targetX, targetY), duration, ease);
+    }
+
+    public static Animate curveP3(Curve curve, Vector2f targetP3, float duration) {
+        return curveP3(curve, targetP3, duration, Ease.InOut);
+    }
+
+    public static Animate curveP3(Curve curve, Vector2f targetP3, float duration, Ease ease) {
+        if (curve == null || targetP3 == null) {
+            throw new IllegalArgumentException("Curve and target point can't be null.");
+        }
+        Vector2f start = new Vector2f();
+        Vector2f targetCopy = new Vector2f(targetP3);
+        return custom(duration, ease, () -> {
+            start.set(curve.getP3());
+        }, (progress) -> {
+            curve.setP3(lerp(start, targetCopy, progress));
+        });
+    }
+
+    public static Animate curveP3(Curve curve, float targetX, float targetY, float duration) {
+        return curveP3(curve, new Vector2f(targetX, targetY), duration, Ease.InOut);
+    }
+
+    public static Animate curveP3(Curve curve, float targetX, float targetY, float duration, Ease ease) {
+        return curveP3(curve, new Vector2f(targetX, targetY), duration, ease);
+    }
+
+    public static Animate curveMove(Curve curve, float deltaX, float deltaY, float duration) {
+        return curveMove(curve, deltaX, deltaY, duration, Ease.InOut);
+    }
+
+    public static Animate curveMove(Curve curve, float deltaX, float deltaY, float duration, Ease ease) {
+        if (curve == null) {
+            throw new IllegalArgumentException("Curve can't be null.");
+        }
+
+        Vector2f startP0 = new Vector2f();
+        Vector2f startP1 = new Vector2f();
+        Vector2f startP2 = new Vector2f();
+        Vector2f startP3 = new Vector2f();
+
+        return custom(duration, ease, () -> {
+            startP0.set(curve.getP0());
+            startP1.set(curve.getP1());
+            startP2.set(curve.getP2());
+            startP3.set(curve.getP3());
+        }, (progress) -> {
+            curve.setP0(lerp(startP0, new Vector2f(startP0.x + deltaX, startP0.y + deltaY), progress));
+            curve.setP1(lerp(startP1, new Vector2f(startP1.x + deltaX, startP1.y + deltaY), progress));
+            curve.setP2(lerp(startP2, new Vector2f(startP2.x + deltaX, startP2.y + deltaY), progress));
+            curve.setP3(lerp(startP3, new Vector2f(startP3.x + deltaX, startP3.y + deltaY), progress));
+        });
+    }
+
+    public static Animate curveMove(Curve curve, Vector2f delta, float duration) {
+        return curveMove(curve, delta, duration, Ease.InOut);
+    }
+
+    public static Animate curveMove(Curve curve, Vector2f delta, float duration, Ease ease) {
+        if (delta == null) {
+            throw new IllegalArgumentException("Delta can't be null.");
+        }
+        return curveMove(curve, delta.x, delta.y, duration, ease);
     }
 
     public static Animate textString(Text text, String targetString, float duration) {
@@ -178,7 +440,14 @@ public class Animate extends TimedAnimation {
             throw new IllegalArgumentException("Text and target position can't be null.");
         }
 
-        return vector2(text.getPosition(), targetPosition, duration, ease, text::setPosition);
+        Vector2f startPosition = new Vector2f();
+        Vector2f targetPositionCopy = new Vector2f(targetPosition);
+
+        return custom(duration, ease, () -> {
+            startPosition.set(text.getPosition());
+        }, (progress) -> {
+            text.setPosition(lerp(startPosition, targetPositionCopy, progress));
+        });
     }
 
     public static Animate textPosition(Text text, float targetX, float targetY, float duration) {
@@ -187,6 +456,108 @@ public class Animate extends TimedAnimation {
 
     public static Animate textPosition(Text text, float targetX, float targetY, float duration, Ease ease) {
         return textPosition(text, new Vector2f(targetX, targetY), duration, ease);
+    }
+
+    public static Animate group(Group group, float targetX, float targetY, float duration) {
+        return group(group, new Vector2f(targetX, targetY), duration, Ease.InOut);
+    }
+
+    public static Animate group(Group group, float targetX, float targetY, float duration, Ease ease) {
+        return group(group, new Vector2f(targetX, targetY), duration, ease);
+    }
+
+    public static Animate group(Group group, Vector2f targetPosition, float duration) {
+        return group(group, targetPosition, duration, Ease.InOut);
+    }
+
+    public static Animate group(Group group, Vector2f targetPosition, float duration, Ease ease) {
+        if (group == null || targetPosition == null) {
+            throw new IllegalArgumentException("Group and target position can't be null.");
+        }
+
+        Vector2f startPosition = new Vector2f();
+        Vector2f targetPositionCopy = new Vector2f(targetPosition);
+
+        return custom(duration, ease, () -> {
+            startPosition.set(group.getPosition());
+        }, (progress) -> {
+            Vector2f currentTarget = lerp(startPosition, targetPositionCopy, progress);
+            float dx = currentTarget.x - group.getX();
+            float dy = currentTarget.y - group.getY();
+            group.move(dx, dy);
+        });
+    }
+
+    public static Animate groupMove(Group group, float deltaX, float deltaY, float duration) {
+        return groupMove(group, new Vector2f(deltaX, deltaY), duration, Ease.InOut);
+    }
+
+    public static Animate groupMove(Group group, float deltaX, float deltaY, float duration, Ease ease) {
+        return groupMove(group, new Vector2f(deltaX, deltaY), duration, ease);
+    }
+
+    public static Animate groupMove(Group group, Vector2f delta, float duration) {
+        return groupMove(group, delta, duration, Ease.InOut);
+    }
+
+    public static Animate groupMove(Group group, Vector2f delta, float duration, Ease ease) {
+        if (group == null || delta == null) {
+            throw new IllegalArgumentException("Group and delta can't be null.");
+        }
+
+        Vector2f startPosition = new Vector2f();
+        Vector2f targetPositionCopy = new Vector2f();
+
+        return custom(duration, ease, () -> {
+            startPosition.set(group.getPosition());
+            targetPositionCopy.set(startPosition.x + delta.x, startPosition.y + delta.y);
+        }, (progress) -> {
+            Vector2f currentTarget = lerp(startPosition, targetPositionCopy, progress);
+            float dx = currentTarget.x - group.getX();
+            float dy = currentTarget.y - group.getY();
+            group.move(dx, dy);
+        });
+    }
+
+    public static Animate move(Object drawable, float deltaX, float deltaY, float duration) {
+        return move(drawable, new Vector2f(deltaX, deltaY), duration, Ease.InOut);
+    }
+
+    public static Animate move(Object drawable, float deltaX, float deltaY, float duration, Ease ease) {
+        return move(drawable, new Vector2f(deltaX, deltaY), duration, ease);
+    }
+
+    public static Animate move(Object drawable, Vector2f delta, float duration) {
+        return move(drawable, delta, duration, Ease.InOut);
+    }
+
+    public static Animate move(Object drawable, Vector2f delta, float duration, Ease ease) {
+        if (drawable == null || delta == null) {
+            throw new IllegalArgumentException("Drawable and delta can't be null.");
+        }
+        if (drawable instanceof Group) {
+            return groupMove((Group) drawable, delta, duration, ease);
+        }
+        if (drawable instanceof Curve) {
+            return curveMove((Curve) drawable, delta, duration, ease);
+        }
+
+        float[] lastProgress = new float[1];
+        return custom(duration, ease, () -> {
+            lastProgress[0] = 0.0f;
+        }, (progress) -> {
+            float stepProgress = progress - lastProgress[0];
+            lastProgress[0] = progress;
+            Group.moveDrawable(drawable, delta.x * stepProgress, delta.y * stepProgress);
+        });
+    }
+
+    @Override
+    public void begin() {
+        super.begin();
+        if (beginAction != null) {
+            beginAction.begin();
+        }
     }
 
     @Override

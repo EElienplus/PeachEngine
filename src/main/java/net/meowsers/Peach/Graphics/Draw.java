@@ -1,5 +1,7 @@
 package net.meowsers.Peach.Graphics;
 
+import net.meowsers.Peach.Animation.AnimationTimeline;
+import net.meowsers.Peach.Animation.DrawAnimation;
 import net.meowsers.Peach.Drawables.*;
 import net.meowsers.Peach.Utils.Color;
 import net.meowsers.Peach.Utils.Enums.Colors;
@@ -57,9 +59,18 @@ public class Draw {
 
 
     public static void rectangle(Rectangle rectangle, Colors color) {
+        if (color == null) return;
         rectangle(rectangle, color.getColor());
     }
     public static void rectangle(Rectangle rectangle, Color color) {
+        if (rectangle == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> rectangle(rectangle, color)));
+            return;
+        }
+        if (renderer == null) return;
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
         float x = rectangle.getX(), y = rectangle.getY(), w = rectangle.getW(), h = rectangle.getH();
 
@@ -73,29 +84,77 @@ public class Draw {
         renderer.submit(QUAD_VERTS, QUAD_INDICES, 0, 0);
     }
 
-    public static void image(Texture texture, Rectangle rectangle) {
+    public static void image(Texture texture, Rectangle rectangle, Colors color) {
+        if (color == null) return;
+        image(texture, rectangle, color.getColor());
+    }
+
+    public static void image(Texture texture, Rectangle rectangle, Color color) {
+        if (texture == null || rectangle == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> image(texture, rectangle, color)));
+            return;
+        }
+        if (renderer == null) return;
+        float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
         float x = rectangle.getX(), y = rectangle.getY(), w = rectangle.getW(), h = rectangle.getH();
 
         setQuadVerts(
-                x, y,          1f, 1f, 1f, 1f, 0f, 1f,
-                x, y + h,      1f, 1f, 1f, 1f, 0f, 0f,
-                x + w, y + h,  1f, 1f, 1f, 1f, 1f, 0f,
-                x + w, y,      1f, 1f, 1f, 1f, 1f, 1f
+                x, y,          r, g, b, a, 0f, 1f,
+                x, y + h,      r, g, b, a, 0f, 0f,
+                x + w, y + h,  r, g, b, a, 1f, 0f,
+                x + w, y,      r, g, b, a, 1f, 1f
         );
 
         renderer.submit(QUAD_VERTS, QUAD_INDICES, texture.getTextureID(), 0);
     }
-    public static void image(Texture texture, float x, float y, float scale) {
-        image(texture, new Rectangle(x, y, texture.getWidth() * scale, texture.getHeight() * scale));
+
+    public static void image(Texture texture, Rectangle rectangle) {
+        image(texture, rectangle, Colors.White);
     }
+
+    public static void image(Texture texture, float x, float y, float scale, Colors color) {
+        if (color == null) return;
+        image(texture, x, y, scale, color.getColor());
+    }
+
+    public static void image(Texture texture, float x, float y, float scale, Color color) {
+        if (texture == null) return;
+        image(texture, new Rectangle(x, y, texture.getWidth() * scale, texture.getHeight() * scale), color);
+    }
+
+    public static void image(Texture texture, float x, float y, float scale) {
+        image(texture, x, y, scale, Colors.White);
+    }
+
+    public static void image(Texture texture, float x, float y, Colors color) {
+        image(texture, x, y, 1.f, color);
+    }
+
+    public static void image(Texture texture, float x, float y, Color color) {
+        image(texture, x, y, 1.f, color);
+    }
+
     public static void image(Texture texture, float x, float y) {
-        image(texture, x, y, 1.f);
+        image(texture, x, y, 1.f, Colors.White);
     }
 
     public static void text(Text text, float x, float y, Colors color) {
+        if (color == null) return;
         text(text, x, y, color.getColor());
     }
     public static void text(Text text, float x, float y, Color color) {
+        if (text == null || color == null) {
+            return;
+        }
+        text.setPosition(x, y);
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> text(text, text.getPosition().x, text.getPosition().y, color)));
+            return;
+        }
+        if (renderer == null) return;
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
         Text.FontData fontData = text.getFontData();
 
@@ -130,10 +189,29 @@ public class Draw {
         }
     }
 
+    public static void text(Text text, Colors color) {
+        if (text == null || color == null) return;
+        text(text, text.getPosition().x, text.getPosition().y, color.getColor());
+    }
+
+    public static void text(Text text, Color color) {
+        if (text == null || color == null) return;
+        text(text, text.getPosition().x, text.getPosition().y, color);
+    }
+
     public static void line(Line line, int thickness, Colors color) {
+        if (color == null) return;
         line(line, thickness, color.getColor());
     }
     public static void line(Line line, int thickness, Color color) {
+        if (line == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> line(line, thickness, color)));
+            return;
+        }
+        if (renderer == null) return;
         float startX = line.getStartPos().x;
         float startY = line.getStartPos().y;
         float endX = line.getEndPos().x;
@@ -164,16 +242,33 @@ public class Draw {
         renderer.submit(QUAD_VERTS, QUAD_INDICES, 0, 0);
     }
 
+    public static void line(Line line, Colors color) {
+        line(line, 2, color);
+    }
+
+    public static void line(Line line, Color color) {
+        line(line, 2, color);
+    }
+
     public static void curve(Curve curve, Colors color) {
-        curve(curve, 1, color.getColor());
+        curve(curve, 1, color);
     }
     public static void curve(Curve curve, Color color) {
         curve(curve, 1, color);
     }
     public static void curve(Curve curve, int thickness, Colors color) {
+        if (color == null) return;
         curve(curve, thickness, color.getColor());
     }
     public static void curve(Curve curve, int thickness, Color color) {
+        if (curve == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> curve(curve, thickness, color)));
+            return;
+        }
+        if (renderer == null) return;
         List<Vector2f> points = curve.getPoints();
         int numPoints = points.size();
 
@@ -272,9 +367,18 @@ public class Draw {
     }
 
     public static void circle(Circle circle, Colors color) {
+        if (color == null) return;
         circle(circle, color.getColor());
     }
     public static void circle(Circle circle, Color color) {
+        if (circle == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> circle(circle, color)));
+            return;
+        }
+        if (renderer == null) return;
         Vector2f center = circle.getCenter();
         float radius = circle.getRadius();
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
@@ -299,9 +403,18 @@ public class Draw {
     }
 
     public static void triangle(Triangle tri, Colors color) {
+        if (color == null) return;
         triangle(tri, color.getColor());
     }
     public static void triangle(Triangle tri, Color color) {
+        if (tri == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> triangle(tri, color)));
+            return;
+        }
+        if (renderer == null) return;
         float r = color.getR(), g = color.getG(), b = color.getB(), a = color.getA();
 
         setTriVerts(
@@ -314,9 +427,18 @@ public class Draw {
     }
 
     public static void arrow(Arrow arrow, int thickness, float headLength, float headWidth, Colors color) {
+        if (color == null) return;
         arrow(arrow, thickness, headLength, headWidth, color.getColor());
     }
     public static void arrow(Arrow arrow, int thickness, float headLength, float headWidth, Color color) {
+        if (arrow == null || color == null) {
+            return;
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> arrow(arrow, thickness, headLength, headWidth, color)));
+            return;
+        }
+        if (renderer == null) return;
         Line line = arrow.getLine();
         if (line == null) return;
 
@@ -369,10 +491,48 @@ public class Draw {
         renderer.submit(QUAD_VERTS, QUAD_INDICES, 0, 0);
     }
     public static void arrow(Arrow arrow, int thickness, Colors color) {
+        if (color == null) return;
         arrow(arrow, thickness, color.getColor());
     }
     public static void arrow(Arrow arrow, int thickness, Color color) {
         arrow(arrow, thickness, thickness * 5.0f, thickness * 4.0f, color);
+    }
+
+    public static void group(Group group, Colors color) {
+        if (group == null || color == null) {
+            throw new IllegalArgumentException("Group and color cannot be null.");
+        }
+        group(group, color.getColor());
+    }
+
+    public static void group(Group group, Color color) {
+        if (group == null || color == null) {
+            throw new IllegalArgumentException("Group and color cannot be null.");
+        }
+        if (AnimationTimeline.isRecording()) {
+            AnimationTimeline.record(new DrawAnimation(() -> group(group, color)));
+            return;
+        }
+        for (Object item : group) {
+            if (item instanceof Rectangle) {
+                rectangle((Rectangle) item, color);
+            } else if (item instanceof Circle) {
+                circle((Circle) item, color);
+            } else if (item instanceof Triangle) {
+                triangle((Triangle) item, color);
+            } else if (item instanceof Line) {
+                line((Line) item, 2, color);
+            } else if (item instanceof Arrow) {
+                arrow((Arrow) item, 4, color);
+            } else if (item instanceof Curve) {
+                curve((Curve) item, 2, color);
+            } else if (item instanceof Text) {
+                Text t = (Text) item;
+                text(t, t.getPosition().x, t.getPosition().y, color);
+            } else if (item instanceof Group) {
+                group((Group) item, color);
+            }
+        }
     }
 
 

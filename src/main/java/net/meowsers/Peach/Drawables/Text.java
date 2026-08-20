@@ -2,6 +2,7 @@ package net.meowsers.Peach.Drawables;
 
 import net.meowsers.Peach.Utils.LiveVector2f;
 import net.meowsers.Peach.Utils.Enums.Fonts;
+import net.meowsers.Peach.Window;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
@@ -202,5 +203,70 @@ public class Text {
 
     public void setPosition(float x, float y) {
         position.set(x, y);
+    }
+
+    public float getWidth() {
+        return getWidth(this.string);
+    }
+
+    public float getWidth(String str) {
+        if (str == null || str.isEmpty()) return 0;
+
+        FontData fontData = getFontData();
+        if (fontData == null) return 0;
+
+        float scale = (float) fontSize / BAKED_SIZE;
+        float width = 0;
+
+        for (char c : str.toCharArray()) {
+            Glyph glyph = fontData.glyphs.get(c);
+            if (glyph != null) {
+                width += (glyph.advance * scale);
+            }
+        }
+
+        return width;
+    }
+
+    public static float getCenteredX(Window window, Text text) {
+        if (window == null) {
+            throw new IllegalArgumentException("Window can't be null.");
+        }
+        if (text == null) {
+            throw new IllegalArgumentException("Text can't be null.");
+        }
+
+        return (window.getWidth() - text.getWidth()) / 2.0f;
+    }
+
+    public static float getCenteredX(Window window, Text text, String newString) {
+        if (window == null) {
+            throw new IllegalArgumentException("Window can't be null.");
+        }
+        if (text == null) {
+            throw new IllegalArgumentException("Text can't be null.");
+        }
+
+        return (window.getWidth() - text.getWidth(newString)) / 2.0f;
+    }
+
+    public static float getCenteredX(Window window, String text, Fonts font, int fontSize) {
+        if (window == null) {
+            throw new IllegalArgumentException("Window can't be null.");
+        }
+        if (font == null) {
+            throw new IllegalArgumentException("Font can't be null.");
+        }
+        return getCenteredX(window, new Text(text, font, fontSize));
+    }
+
+    public static float getCenteredX(Window window, String text, String fontPath, int fontSize) {
+        if (window == null) {
+            throw new IllegalArgumentException("Window can't be null.");
+        }
+        if (fontPath == null) {
+            throw new IllegalArgumentException("Font path can't be null.");
+        }
+        return getCenteredX(window, new Text(text, fontPath, fontSize));
     }
 }

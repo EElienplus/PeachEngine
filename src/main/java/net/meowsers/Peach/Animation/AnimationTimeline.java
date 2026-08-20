@@ -16,6 +16,10 @@ public class AnimationTimeline {
 
     private Animation currentAnimation;
 
+    public static boolean isRecording() {
+        return recordingTimeline.get() != null;
+    }
+
     public void record(Runnable script) {
         if (script == null) {
             throw new IllegalArgumentException("Script can't be null.");
@@ -61,23 +65,32 @@ public class AnimationTimeline {
     }
 
     public void update(float deltaTime) {
-        if (currentAnimation == null) {
-            currentAnimation = animations.poll();
+        while (true) {
+            if (currentAnimation == null) {
+                currentAnimation = animations.poll();
 
-            if (currentAnimation != null) {
-                currentAnimation.begin();
+                if (currentAnimation != null) {
+                    currentAnimation.begin();
+                }
             }
-        }
 
-        if (currentAnimation == null) {
-            return;
-        }
+            if (currentAnimation == null) {
+                return;
+            }
 
-        currentAnimation.update(deltaTime);
+            currentAnimation.update(deltaTime);
 
-        if (currentAnimation.isFinished()) {
-            completedAnimations.add(currentAnimation);
-            currentAnimation = null;
+            if (currentAnimation.isFinished()) {
+                completedAnimations.add(currentAnimation);
+                boolean wasInstant = (currentAnimation instanceof DrawAnimation)
+                        || (currentAnimation instanceof TimedAnimation && ((TimedAnimation) currentAnimation).getDuration() == 0.0f);
+                currentAnimation = null;
+
+                if (wasInstant) {
+                    continue;
+                }
+            }
+            break;
         }
     }
 
@@ -102,6 +115,16 @@ public class AnimationTimeline {
     }
 
     static AnimateDraw record(AnimateDraw animation) {
+        AnimationTimeline timeline = recordingTimeline.get();
+
+        if (timeline != null) {
+            timeline.recordAnimation(animation);
+        }
+
+        return animation;
+    }
+
+    public static DrawAnimation record(DrawAnimation animation) {
         AnimationTimeline timeline = recordingTimeline.get();
 
         if (timeline != null) {

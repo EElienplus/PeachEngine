@@ -152,7 +152,22 @@ public class Curve {
     }
 
     public void setP0(Vector2f p0) {
-        this.p0.set(p0);
+        if (p0 == null) {
+            throw new IllegalArgumentException("Point cannot be null.");
+        }
+        if (this.p0 == null) {
+            this.p0 = new Vector2f(p0);
+        } else {
+            this.p0.set(p0);
+        }
+    }
+
+    public void setP0(float x, float y) {
+        if (this.p0 == null) {
+            this.p0 = new Vector2f(x, y);
+        } else {
+            this.p0.set(x, y);
+        }
     }
 
     public Vector2f getP1() {
@@ -160,7 +175,22 @@ public class Curve {
     }
 
     public void setP1(Vector2f p1) {
-        this.p1.set(p1);
+        if (p1 == null) {
+            throw new IllegalArgumentException("Point cannot be null.");
+        }
+        if (this.p1 == null) {
+            this.p1 = new Vector2f(p1);
+        } else {
+            this.p1.set(p1);
+        }
+    }
+
+    public void setP1(float x, float y) {
+        if (this.p1 == null) {
+            this.p1 = new Vector2f(x, y);
+        } else {
+            this.p1.set(x, y);
+        }
     }
 
     public Vector2f getP2() {
@@ -168,7 +198,22 @@ public class Curve {
     }
 
     public void setP2(Vector2f p2) {
-        this.p2.set(p2);
+        if (p2 == null) {
+            throw new IllegalArgumentException("Point cannot be null.");
+        }
+        if (this.p2 == null) {
+            this.p2 = new Vector2f(p2);
+        } else {
+            this.p2.set(p2);
+        }
+    }
+
+    public void setP2(float x, float y) {
+        if (this.p2 == null) {
+            this.p2 = new Vector2f(x, y);
+        } else {
+            this.p2.set(x, y);
+        }
     }
 
     public Vector2f getP3() {
@@ -176,6 +221,46 @@ public class Curve {
     }
 
     public void setP3(Vector2f p3) {
-        this.p3.set(p3);
+        if (p3 == null) {
+            throw new IllegalArgumentException("Point cannot be null.");
+        }
+        if (this.p3 == null) {
+            this.p3 = new Vector2f(p3);
+        } else {
+            this.p3.set(p3);
+        }
+    }
+
+    public void setP3(float x, float y) {
+        if (this.p3 == null) {
+            this.p3 = new Vector2f(x, y);
+        } else {
+            this.p3.set(x, y);
+        }
+    }
+
+    public void setPoints(Vector2f p0, Vector2f p1, Vector2f p2, Vector2f p3) {
+        if (p0 != null) setP0(p0);
+        if (p1 != null) setP1(p1);
+        if (p2 != null) setP2(p2);
+        if (p3 != null) setP3(p3);
+    }
+
+    public void move(float dx, float dy) {
+        Vector2f currentP0 = getP0();
+        Vector2f currentP1 = getP1();
+        Vector2f currentP2 = getP2();
+        Vector2f currentP3 = getP3();
+        setP0(currentP0.x + dx, currentP0.y + dy);
+        setP1(currentP1.x + dx, currentP1.y + dy);
+        setP2(currentP2.x + dx, currentP2.y + dy);
+        setP3(currentP3.x + dx, currentP3.y + dy);
+    }
+
+    public void move(Vector2f delta) {
+        if (delta == null) {
+            throw new IllegalArgumentException("Delta cannot be null.");
+        }
+        move(delta.x, delta.y);
     }
 }

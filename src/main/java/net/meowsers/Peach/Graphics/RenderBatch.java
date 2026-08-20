@@ -115,13 +115,14 @@ public class RenderBatch implements Comparable<RenderBatch> {
 
         int activeCount = textureIds.size();
         int[] uploadSlots = new int[8];
-        for (int i = 0; i < 8; i++) {
+        uploadSlots[0] = 0;
+        for (int i = 0; i < 7; i++) {
             if (i < activeCount) {
                 glActiveTexture(GL_TEXTURE0 + i + 1);
                 glBindTexture(GL_TEXTURE_2D, textureIds.get(i));
-                uploadSlots[i] = i + 1;
+                uploadSlots[i + 1] = i + 1;
             } else {
-                uploadSlots[i] = activeCount > 0 ? 1 : 0;
+                uploadSlots[i + 1] = 0;
             }
         }
         shader.uploadIntArray("uTextures", uploadSlots);

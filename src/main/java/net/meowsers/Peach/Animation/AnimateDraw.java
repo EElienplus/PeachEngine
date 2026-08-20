@@ -3,9 +3,11 @@ package net.meowsers.Peach.Animation;
 import net.meowsers.Peach.Drawables.Arrow;
 import net.meowsers.Peach.Drawables.Circle;
 import net.meowsers.Peach.Drawables.Curve;
+import net.meowsers.Peach.Drawables.Group;
 import net.meowsers.Peach.Drawables.Line;
 import net.meowsers.Peach.Drawables.Rectangle;
 import net.meowsers.Peach.Drawables.Text;
+import net.meowsers.Peach.Drawables.Texture;
 import net.meowsers.Peach.Drawables.Triangle;
 import net.meowsers.Peach.Graphics.Draw;
 import net.meowsers.Peach.Utils.Color;
@@ -255,6 +257,186 @@ public class AnimateDraw extends TimedAnimation {
         });
     }
 
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, float duration) {
+        return image(texture, rectangle, Colors.White.getColor(), duration, DEFAULT_EASE, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Colors color, float duration) {
+        return image(texture, rectangle, color.getColor(), duration);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Color color, float duration) {
+        return image(texture, rectangle, color, duration, DEFAULT_EASE, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, float duration, Ease ease) {
+        return image(texture, rectangle, Colors.White.getColor(), duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Colors color, float duration, Ease ease) {
+        return image(texture, rectangle, color.getColor(), duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Color color, float duration, Ease ease) {
+        return image(texture, rectangle, color, duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, float duration, AnimationType animationType) {
+        return image(texture, rectangle, Colors.White.getColor(), duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Colors color, float duration, AnimationType animationType) {
+        return image(texture, rectangle, color.getColor(), duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Color color, float duration, AnimationType animationType) {
+        return image(texture, rectangle, color, duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, rectangle, Colors.White.getColor(), duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Colors color, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, rectangle, color.getColor(), duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle, Color color, float duration, Ease ease, AnimationType animationType) {
+        if (texture == null) {
+            throw new IllegalArgumentException("Texture and color can't be null.");
+        }
+        validate(rectangle, color, ease, animationType, "Rectangle and color can't be null.");
+
+        return create(duration, ease, animationType, (progress) -> {
+            if (animationType == AnimationType.Scale) {
+                float width = rectangle.getW() * progress;
+                float height = rectangle.getH() * progress;
+                Draw.image(texture, new Rectangle(
+                        rectangle.getX() + ((rectangle.getW() - width) / 2.0f),
+                        rectangle.getY() + ((rectangle.getH() - height) / 2.0f),
+                        width,
+                        height
+                ), color);
+                return;
+            }
+
+            drawStyledShape(
+                    progress,
+                    animationType,
+                    color,
+                    (fillColor) -> Draw.image(texture, rectangle, fillColor),
+                    (outlineProgress, outlineColor) -> drawRectangleOutline(rectangle, outlineProgress, outlineColor)
+            );
+        });
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, float duration) {
+        return image(texture, x, y, scale, Colors.White.getColor(), duration, DEFAULT_EASE, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Colors color, float duration) {
+        return image(texture, x, y, scale, color.getColor(), duration);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Color color, float duration) {
+        return image(texture, x, y, scale, color, duration, DEFAULT_EASE, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, float duration, Ease ease) {
+        return image(texture, x, y, scale, Colors.White.getColor(), duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Colors color, float duration, Ease ease) {
+        return image(texture, x, y, scale, color.getColor(), duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Color color, float duration, Ease ease) {
+        return image(texture, x, y, scale, color, duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, float duration, AnimationType animationType) {
+        return image(texture, x, y, scale, Colors.White.getColor(), duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Colors color, float duration, AnimationType animationType) {
+        return image(texture, x, y, scale, color.getColor(), duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Color color, float duration, AnimationType animationType) {
+        return image(texture, x, y, scale, color, duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, x, y, scale, Colors.White.getColor(), duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Colors color, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, x, y, scale, color.getColor(), duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float scale, Color color, float duration, Ease ease, AnimationType animationType) {
+        if (texture == null) {
+            throw new IllegalArgumentException("Texture and color can't be null.");
+        }
+        return image(texture, new Rectangle(x, y, texture.getWidth() * scale, texture.getHeight() * scale), color, duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float duration) {
+        return image(texture, x, y, 1.0f, duration);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Colors color, float duration) {
+        return image(texture, x, y, 1.0f, color, duration);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Color color, float duration) {
+        return image(texture, x, y, 1.0f, color, duration);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float duration, Ease ease) {
+        return image(texture, x, y, 1.0f, duration, ease);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Colors color, float duration, Ease ease) {
+        return image(texture, x, y, 1.0f, color, duration, ease);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Color color, float duration, Ease ease) {
+        return image(texture, x, y, 1.0f, color, duration, ease);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float duration, AnimationType animationType) {
+        return image(texture, x, y, 1.0f, duration, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Colors color, float duration, AnimationType animationType) {
+        return image(texture, x, y, 1.0f, color, duration, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Color color, float duration, AnimationType animationType) {
+        return image(texture, x, y, 1.0f, color, duration, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, x, y, 1.0f, duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Colors color, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, x, y, 1.0f, color, duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y, Color color, float duration, Ease ease, AnimationType animationType) {
+        return image(texture, x, y, 1.0f, color, duration, ease, animationType);
+    }
+
+    public static AnimateDraw image(Texture texture, float x, float y) {
+        return image(texture, x, y, 1.0f, 1.0f);
+    }
+
+    public static AnimateDraw image(Texture texture, Rectangle rectangle) {
+        return image(texture, rectangle, 1.0f);
+    }
+
     public static AnimateDraw text(Text text, float x, float y, Colors color, float duration) {
         return text(text, x, y, color.getColor(), duration);
     }
@@ -354,6 +536,34 @@ public class AnimateDraw extends TimedAnimation {
         validate(curve, color, ease, animationType, "Curve and color can't be null.");
 
         return create(duration, ease, animationType, (progress) -> drawOpenPath(curve.getPoints(), progress, thickness, color));
+    }
+
+    public static AnimateDraw group(Group group, Colors color, float duration) {
+        return group(group, color.getColor(), duration);
+    }
+
+    public static AnimateDraw group(Group group, Color color, float duration) {
+        return group(group, color, duration, DEFAULT_EASE, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw group(Group group, Colors color, float duration, Ease ease) {
+        return group(group, color.getColor(), duration, ease, DEFAULT_ANIMATION_TYPE);
+    }
+
+    public static AnimateDraw group(Group group, Colors color, float duration, AnimationType animationType) {
+        return group(group, color.getColor(), duration, DEFAULT_EASE, animationType);
+    }
+
+    public static AnimateDraw group(Group group, Colors color, float duration, Ease ease, AnimationType animationType) {
+        return group(group, color.getColor(), duration, ease, animationType);
+    }
+
+    public static AnimateDraw group(Group group, Color color, float duration, Ease ease, AnimationType animationType) {
+        validate(group, color, ease, animationType, "Group and color can't be null.");
+
+        return create(duration, ease, animationType, (progress) -> {
+            Draw.group(group, withOpacity(color, progress));
+        });
     }
 
     @Override

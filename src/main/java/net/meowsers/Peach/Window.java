@@ -18,8 +18,13 @@ public class Window {
     private boolean running;
     private Color backgroundColor = Colors.Black.getColor();
 
+    private int width, height;
+
     public Window(String title, int width, int height) {
         running = true;
+
+        this.width = width;
+        this.height = height;
 
         handle = glfwCreateWindow(width, height, title, 0, 0);
         if(handle == 0) {
@@ -93,5 +98,13 @@ public class Window {
 
     public long getHandle() {
         return handle;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 }
